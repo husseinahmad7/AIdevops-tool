@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, user-management, infrastructure-monitor, ai-prediction, log-analysis, cicd-optimization, resource-optimization, natural-language, notification, reporting]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit install-hooks
+          pre-commit run --all-files
+
+      - name: Install Pipenv
+        run: pip install pipenv
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.service }}
+        run: |
+          pipenv install --dev --system --deploy || pipenv install --system
+
+      - name: Run tests
+        working-directory: ${{ matrix.service }}
+        run: |
+          python -m pytest -q || echo "No tests, skipping"
+

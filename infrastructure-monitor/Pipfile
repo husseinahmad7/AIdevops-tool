@@ -1,0 +1,29 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+black = "*"
+mypy = "*"
+pytest = "*"
+pytest-cov = "*"
+
+[packages]
+fastapi = "*"
+uvicorn = "*"
+pydantic = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
+requests = "*"
+prometheus-client = "*"
+psutil = "*"
+docker = "*"
+kubernetes = "*"
+pytz = "*"
+httpx = "*"
+redis = "*"
+pika = "*"
+
+[requires]
+python_version = "3.11"

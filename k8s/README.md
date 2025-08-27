@@ -1,0 +1,1 @@
+Kubernetes manifests will be generated incrementally for each service, including Deployments, Services, ConfigMaps/Secrets, and optional Ingress with Nginx. Helm charts are recommended for parameterization. Coming next.

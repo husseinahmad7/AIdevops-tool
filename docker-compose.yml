@@ -1,0 +1,475 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:15
+    container_name: aidevops-postgres
+    environment:
+      POSTGRES_USER: aidevops
+      POSTGRES_PASSWORD: aidevops_password
+      POSTGRES_DB: aidevops
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - aidevops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aidevops"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Cache Service
+  redis:
+    image: redis:7
+    container_name: aidevops-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - aidevops-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka (with Zookeeper)
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    container_name: aidevops-zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    networks:
+      - aidevops-network
+
+  kafka:
+    image: bitnami/kafka:3.5
+    container_name: aidevops-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+    depends_on:
+      - zookeeper
+    networks:
+      - aidevops-network
+
+  # MinIO (S3-compatible) for model artifacts
+  minio:
+    image: minio/minio:latest
+    container_name: aidevops-minio
+    environment:
+      - MINIO_ROOT_USER=aidevops
+      - MINIO_ROOT_PASSWORD=aidevops_secret
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - aidevops-network
+
+  # MongoDB for AI Prediction metadata
+  mongodb:
+    image: mongo:6
+    container_name: aidevops-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - aidevops-network
+
+  # MLflow Tracking Server
+  mlflow:
+    build:
+      context: ./mlflow-service
+    container_name: aidevops-mlflow
+    environment:
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=aidevops
+      - AWS_SECRET_ACCESS_KEY=aidevops_secret
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    depends_on:
+      - minio
+    networks:
+      - aidevops-network
+
+  # Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: aidevops-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: aidevops
+      RABBITMQ_DEFAULT_PASS: aidevops_password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - aidevops-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch for Log Analysis
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: aidevops-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - aidevops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aidevops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - aidevops-network
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aidevops-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - aidevops-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Chroma vector database for NLP
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: aidevops-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    networks:
+      - aidevops-network
+
+  # Reverse Proxy
+  nginx:
+    image: nginx:latest
+    container_name: aidevops-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - api-gateway
+    networks:
+      - aidevops-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: aidevops-api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - aidevops-network
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - DATABASE_URL=postgresql://aidevops:aidevops_password@postgres:5432/aidevops
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://aidevops:aidevops_password@rabbitmq:5672/
+    restart: on-failure
+
+  # User Management Service
+  user-management:
+    build:
+      context: ./user-management
+    container_name: aidevops-user-management
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - DATABASE_URL=postgresql://aidevops:aidevops_password@postgres:5432/aidevops
+    depends_on:
+      - postgres
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # Infrastructure Monitoring Service
+  infrastructure-monitor:
+    build:
+      context: ./infrastructure-monitor
+    container_name: aidevops-infrastructure-monitor
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://aidevops:aidevops_password@rabbitmq:5672/
+      - DOCKER_ENABLED=true
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - redis
+      - rabbitmq
+      - user-management
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # AI Prediction Service
+  ai-prediction:
+    build:
+      context: ./ai-prediction
+    container_name: aidevops-ai-prediction
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - REDIS_URL=redis://redis:6379/0
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=aidevops
+      - AWS_SECRET_ACCESS_KEY=aidevops_secret
+    depends_on:
+      - redis
+      - user-management
+      - mongodb
+      - mlflow
+      - minio
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # Log Analysis Service
+  log-analysis:
+    build:
+      context: ./log-analysis
+    container_name: aidevops-log-analysis
+    ports:
+      - "8084:8084"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://aidevops:aidevops_password@rabbitmq:5672/
+      - KAFKA_BROKER_URL=kafka:9092
+    depends_on:
+      - elasticsearch
+      - redis
+      - rabbitmq
+      - user-management
+      - kafka
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # CI/CD Optimization Service
+  cicd-optimization:
+    build:
+      context: ./cicd-optimization
+    container_name: aidevops-cicd-optimization
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - DATABASE_URL=postgresql://aidevops:aidevops_password@postgres:5432/aidevops
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+      - user-management
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # Resource Optimization Service
+  resource-optimization:
+    build:
+      context: ./resource-optimization
+    container_name: aidevops-resource-optimization
+    ports:
+      - "8086:8086"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - DATABASE_URL=postgresql://aidevops:aidevops_password@postgres:5432/aidevops
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+      - user-management
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # Notification Service
+  notification:
+    build:
+      context: ./notification
+    container_name: aidevops-notification
+    ports:
+      - "8087:8087"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - DATABASE_URL=postgresql://aidevops:aidevops_password@postgres:5432/aidevops
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://aidevops:aidevops_password@rabbitmq:5672/
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - user-management
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # Natural Language Interface Service
+  natural-language:
+    build:
+      context: ./natural-language
+    container_name: aidevops-natural-language
+    ports:
+      - "8088:8088"
+    env_file:
+      - ./api-key.env
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - VECTOR_DB_TYPE=chroma
+      - VECTOR_DB_URL=http://chroma:8000
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      - chroma
+      - user-management
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+  # Reporting Service
+  reporting:
+    build:
+      context: ./reporting
+    container_name: aidevops-reporting
+    ports:
+      - "8089:8089"
+    environment:
+      - DEBUG=true
+      - AUTH_ENABLED=true
+      - USER_MANAGEMENT_URL=http://user-management:8081
+      - DATABASE_URL=postgresql://aidevops:aidevops_password@postgres:5432/aidevops
+      - REDIS_URL=redis://redis:6379/0
+      - INFRASTRUCTURE_MONITOR_URL=http://infrastructure-monitor:8082
+      - AI_PREDICTION_URL=http://ai-prediction:8083
+      - LOG_ANALYSIS_URL=http://log-analysis:8084
+      - RESOURCE_OPTIMIZATION_URL=http://resource-optimization:8086
+    depends_on:
+      - postgres
+      - redis
+      - user-management
+    networks:
+      - aidevops-network
+    restart: on-failure
+
+networks:
+  aidevops-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  elasticsearch_data:
+  chroma_data:
+  prometheus_data:
+  grafana_data:
+  mongo_data:
+  minio_data:
+  mlflow_data:

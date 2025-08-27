@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: natural-language
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: natural-language
+  template:
+    metadata:
+      labels:
+        app: natural-language
+    spec:
+      containers:
+        - name: natural-language
+          image: aidevops/natural-language:latest
+          ports:
+            - containerPort: 8088
+          env:
+            - name: USER_MANAGEMENT_URL
+              value: http://user-management:8081
+            - name: VECTOR_DB_TYPE
+              value: chroma
+            - name: VECTOR_DB_URL
+              value: http://chroma:8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: natural-language
+spec:
+  selector:
+    app: natural-language
+  ports:
+    - port: 8088
+      targetPort: 8088
+      protocol: TCP
+      name: http
+

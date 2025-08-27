@@ -1,0 +1,29 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+black = "*"
+pytest = "*"
+
+[packages]
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+python-jose = {extras = ["cryptography"], version = "*"}
+python-multipart = "*"
+pydantic = {extras = ["email"], version = "*"}
+langchain = "*"
+langchain-openai = "*"
+langchain-community = "*"
+requests = "*"
+pinecone-client = "*"
+faiss-cpu = "*"
+sentence-transformers = "*"
+chroma = "*"
+chromaclient = "*"
+chromadb = "*"
+
+[requires]
+python_version = "3.11"

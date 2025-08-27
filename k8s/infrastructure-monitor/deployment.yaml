@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infrastructure-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infrastructure-monitor
+  template:
+    metadata:
+      labels:
+        app: infrastructure-monitor
+    spec:
+      containers:
+        - name: infrastructure-monitor
+          image: aidevops/infrastructure-monitor:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: USER_MANAGEMENT_URL
+              value: http://user-management:8081
+            - name: DOCKER_ENABLED
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infrastructure-monitor
+spec:
+  selector:
+    app: infrastructure-monitor
+  ports:
+    - port: 8082
+      targetPort: 8082
+      protocol: TCP
+      name: http
+
