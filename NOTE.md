@@ -26,7 +26,7 @@ pytest:
       for svc in api-gateway user-management infrastructure-monitor ai-prediction log-analysis cicd-optimization resource-optimization natural-language notification reporting; do
         echo "===> Testing $svc"
         cd "$svc"
-        
+
         # Create .env file from GitLab CI variables
         cat > .env << EOF
         API_KEY=${API_KEY}
