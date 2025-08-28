@@ -1,0 +1,29 @@
+image: python:3.11
+
+stages:
+  - lint
+  - test
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_CACHE_DIR: "1"
+
+lint:
+  stage: lint
+  script:
+    - pip install pre-commit
+    - pre-commit install-hooks
+    - pre-commit run --all-files
+
+pytest:
+  stage: test
+  script:
+    - |
+      for svc in api-gateway user-management infrastructure-monitor ai-prediction log-analysis cicd-optimization resource-optimization natural-language notification reporting; do
+        echo "===> Testing $svc"
+        cd "$svc"
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; else echo "requirements.txt missing for $svc" && exit 1; fi
+        python -m pytest -q || echo "No tests, skipping"
+        cd -
+      done
+

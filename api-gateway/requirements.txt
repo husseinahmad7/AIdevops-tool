@@ -1,0 +1,11 @@
+fastapi==0.95.2
+uvicorn
+python-jose[cryptography]
+python-multipart
+pydantic[email]<2
+httpx
+redis
+psycopg2-binary
+pika
+requests
+

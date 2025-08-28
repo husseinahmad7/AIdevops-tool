@@ -1,0 +1,14 @@
+fastapi==0.95.2
+uvicorn
+pydantic<2
+python-jose[cryptography]
+requests
+prometheus-client
+psutil
+docker
+kubernetes
+pytz
+httpx
+redis
+pika
+

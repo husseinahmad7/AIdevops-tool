@@ -1,0 +1,13 @@
+fastapi==0.95.2
+uvicorn
+pydantic<2
+python-jose[cryptography]
+requests
+httpx
+elasticsearch
+pandas
+numpy
+regex
+redis
+pika
+

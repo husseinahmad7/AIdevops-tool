@@ -25,13 +25,10 @@ jobs:
           pre-commit install-hooks
           pre-commit run --all-files
 
-      - name: Install Pipenv
-        run: pip install pipenv
-
       - name: Install dependencies
         working-directory: ${{ matrix.service }}
         run: |
-          pipenv install --dev --system --deploy || pipenv install --system
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; else echo "requirements.txt missing" && exit 1; fi
 
       - name: Run tests
         working-directory: ${{ matrix.service }}

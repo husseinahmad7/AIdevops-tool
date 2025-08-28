@@ -1,0 +1,8 @@
+fastapi==0.95.2
+uvicorn
+httpx
+python-jose[cryptography]
+python-multipart
+pydantic[email]<2
+requests
+
