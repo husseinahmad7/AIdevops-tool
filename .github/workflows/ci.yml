@@ -37,4 +37,3 @@ jobs:
         working-directory: ${{ matrix.service }}
         run: |
           python -m pytest -q || echo "No tests, skipping"
-

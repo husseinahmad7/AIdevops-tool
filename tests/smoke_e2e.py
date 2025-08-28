@@ -52,7 +52,9 @@ def register_login(base: str):
 def call_with_token(base: str, token: str, method: str, path: str, **kwargs):
     headers = kwargs.pop("headers", {})
     headers["Authorization"] = f"Bearer {token}"
-    return requests.request(method, f"{base}{path}", headers=headers, timeout=15, **kwargs)
+    return requests.request(
+        method, f"{base}{path}", headers=headers, timeout=15, **kwargs
+    )
 
 
 def main():
@@ -100,4 +102,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

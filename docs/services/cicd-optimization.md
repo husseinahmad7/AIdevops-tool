@@ -14,4 +14,3 @@
 
 ## Troubleshooting
 - Ensure Gateway forwards Authorization header and/or supply token query param.
-

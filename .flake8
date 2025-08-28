@@ -1,0 +1,11 @@
+[flake8]
+max-line-length = 200
+extend-ignore = E203, W503
+per-file-ignores =
+    admin-ui/streamlit_app.py:E501,E741
+    */app/main.py:F401,E501
+    */app/routes.py:F401,F841,B008,E501
+    api-gateway/app/auth.py:B008
+    user-management/app/auth.py:B008
+    scripts/*:E501,F401
+    tests/*:E501,F401

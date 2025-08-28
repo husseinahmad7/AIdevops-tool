@@ -9,4 +9,3 @@
 
 ## Config
 - DOCKER_ENABLED, DOCKER_HOST, REDIS_URL
-

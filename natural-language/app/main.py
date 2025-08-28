@@ -9,7 +9,7 @@ from .config import settings
 app = FastAPI(
     title="AI DevOps Assistant - Natural Language Interface Service",
     description="Natural Language Interface Service for the AI DevOps Assistant",
-    version="0.1.0"
+    version="0.1.0",
 )
 
 # Add CORS middleware
@@ -24,10 +24,12 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix="/api/v1/nlp")
 
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "natural-language"}
+
 
 # Prometheus metrics in text/plain for Prometheus scraping
 @app.get("/metrics", response_class=PlainTextResponse)
@@ -38,7 +40,10 @@ async def metrics():
 # Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Welcome to AI DevOps Assistant Natural Language Interface Service"}
+    return {
+        "message": "Welcome to AI DevOps Assistant Natural Language Interface Service"
+    }
+
 
 # Error handlers
 @app.exception_handler(HTTPException)
@@ -48,6 +53,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={"detail": exc.detail},
     )
 
+
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
@@ -55,6 +61,8 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error"},
     )
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8088, reload=True)

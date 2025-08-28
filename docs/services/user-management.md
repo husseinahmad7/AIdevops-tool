@@ -19,4 +19,3 @@
 ## Troubleshooting
 - 401/403: ensure token header is set; check Gateway logs
 - DB errors: confirm Postgres is up and DATABASE_URL is correct
-

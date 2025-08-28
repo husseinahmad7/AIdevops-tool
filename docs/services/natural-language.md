@@ -22,4 +22,3 @@ curl -sS -H "Authorization: Bearer $TOKEN" http://localhost/api/v1/nlp/explain/d
 
 ## Troubleshooting
 - 500: set API keys or use DEBUG=true; check gateway/body forwarding; see service logs
-

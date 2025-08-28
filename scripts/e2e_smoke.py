@@ -84,7 +84,9 @@ def main():
 
     # 4) Natural-language minimal call that requires no external LLM
     print("[5/6] NLP documents/search (no-op embedding) ...", end=" ")
-    rv = auth_get("/api/v1/nlp/documents/search", token, params={"query": "test", "limit": 2})
+    rv = auth_get(
+        "/api/v1/nlp/documents/search", token, params={"query": "test", "limit": 2}
+    )
     assert rv.status_code == 200, rv.text
     js = rv.json()
     assert "results" in js, js
@@ -107,4 +109,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"E2E smoke FAILED: {e}")
         sys.exit(1)
-

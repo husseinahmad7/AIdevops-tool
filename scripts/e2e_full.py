@@ -70,14 +70,18 @@ def login(username: str, password: str) -> str:
 
 
 def validate(token: str) -> Dict[str, Any]:
-    r = requests.get(f"{BASE}/api/v1/users/validate", headers=auth_headers(token), timeout=10)
+    r = requests.get(
+        f"{BASE}/api/v1/users/validate", headers=auth_headers(token), timeout=10
+    )
     r.raise_for_status()
     return r.json()
 
 
 def nlp_tests(token: str):
     # explain concept
-    r = requests.get(f"{BASE}/api/v1/nlp/explain/devops", headers=auth_headers(token), timeout=20)
+    r = requests.get(
+        f"{BASE}/api/v1/nlp/explain/devops", headers=auth_headers(token), timeout=20
+    )
     if r.status_code // 100 != 2:
         print(f"[nlp] WARN explain status={r.status_code}")
     # query simple
@@ -101,7 +105,12 @@ def nlp_tests(token: str):
 
 def logs_tests(token: str):
     # search logs (ES might be cold, accept 2xx or 5xx as warn)
-    r = requests.get(f"{BASE}/api/v1/logs/search", headers=auth_headers(token), params={"query": "error"}, timeout=20)
+    r = requests.get(
+        f"{BASE}/api/v1/logs/search",
+        headers=auth_headers(token),
+        params={"query": "error"},
+        timeout=20,
+    )
     if r.status_code // 100 != 2:
         print(f"[logs] WARN status={r.status_code}")
 
@@ -109,17 +118,34 @@ def logs_tests(token: str):
 def cicd_tests(token: str):
     # cicd service expects token query param; include it for compatibility
     params = {"token": token}
-    r = requests.get(f"{BASE}/api/v1/cicd/pipelines", headers=auth_headers(token), params=params, timeout=10)
+    r = requests.get(
+        f"{BASE}/api/v1/cicd/pipelines",
+        headers=auth_headers(token),
+        params=params,
+        timeout=10,
+    )
     assert r.status_code == 200, r.text
-    r = requests.get(f"{BASE}/api/v1/cicd/pipelines/main/analysis", headers=auth_headers(token), params=params, timeout=10)
+    r = requests.get(
+        f"{BASE}/api/v1/cicd/pipelines/main/analysis",
+        headers=auth_headers(token),
+        params=params,
+        timeout=10,
+    )
     assert r.status_code == 200, r.text
-    r = requests.get(f"{BASE}/api/v1/cicd/metrics", headers=auth_headers(token), params=params, timeout=10)
+    r = requests.get(
+        f"{BASE}/api/v1/cicd/metrics",
+        headers=auth_headers(token),
+        params=params,
+        timeout=10,
+    )
     assert r.status_code == 200, r.text
 
 
 def resources_tests(token: str):
     for path in ["/usage", "/costs", "/metrics"]:
-        r = requests.get(f"{BASE}/api/v1/resources{path}", headers=auth_headers(token), timeout=10)
+        r = requests.get(
+            f"{BASE}/api/v1/resources{path}", headers=auth_headers(token), timeout=10
+        )
         assert r.status_code == 200, r.text
     r = requests.post(
         f"{BASE}/api/v1/resources/optimize",
@@ -132,30 +158,46 @@ def resources_tests(token: str):
 
 def infra_monitor_tests(token: str):
     # metrics (protected)
-    r = requests.get(f"{BASE}/api/v1/monitoring/metrics", headers=auth_headers(token), timeout=15)
+    r = requests.get(
+        f"{BASE}/api/v1/monitoring/metrics", headers=auth_headers(token), timeout=15
+    )
     assert r.status_code == 200, r.text
 
 
 def notification_tests(token: str):
-    r = requests.get(f"{BASE}/api/v1/notifications/templates", headers=auth_headers(token), timeout=10)
+    r = requests.get(
+        f"{BASE}/api/v1/notifications/templates",
+        headers=auth_headers(token),
+        timeout=10,
+    )
     assert r.status_code == 200, r.text
     r = requests.post(
         f"{BASE}/api/v1/notifications/send",
         headers={**auth_headers(token), "Content-Type": "application/json"},
-        json={"channels": ["email"], "message": "Hello", "recipients": ["admin@example.com"]},
+        json={
+            "channels": ["email"],
+            "message": "Hello",
+            "recipients": ["admin@example.com"],
+        },
         timeout=10,
     )
     assert r.status_code == 200, r.text
 
 
 def reporting_tests(token: str):
-    r = requests.get(f"{BASE}/api/v1/reports/templates", headers=auth_headers(token), timeout=10)
+    r = requests.get(
+        f"{BASE}/api/v1/reports/templates", headers=auth_headers(token), timeout=10
+    )
     if r.status_code // 100 != 2:
         print(f"[reporting] WARN templates status={r.status_code}")
     r = requests.post(
         f"{BASE}/api/v1/reports/generate",
         headers={**auth_headers(token), "Content-Type": "application/json"},
-        json={"template_id": "system_health", "parameters": {"time_range": "24h"}, "format": "json"},
+        json={
+            "template_id": "system_health",
+            "parameters": {"time_range": "24h"},
+            "format": "json",
+        },
         timeout=15,
     )
     if r.status_code // 100 != 2:
@@ -212,11 +254,20 @@ def main():
         ("chroma", lambda: http_check("http://localhost:8000/api/v1/")),
         ("api-gateway", lambda: http_check("http://localhost:8080/health", [200])),
         ("user-management", lambda: http_check("http://localhost:8081/health", [200])),
-        ("infrastructure-monitor", lambda: http_check("http://localhost:8082/health", [200])),
+        (
+            "infrastructure-monitor",
+            lambda: http_check("http://localhost:8082/health", [200]),
+        ),
         ("ai-prediction", lambda: http_check("http://localhost:8083/health", [200])),
         ("log-analysis", lambda: http_check("http://localhost:8084/health", [200])),
-        ("cicd-optimization", lambda: http_check("http://localhost:8085/health", [200])),
-        ("resource-optimization", lambda: http_check("http://localhost:8086/health", [200])),
+        (
+            "cicd-optimization",
+            lambda: http_check("http://localhost:8085/health", [200]),
+        ),
+        (
+            "resource-optimization",
+            lambda: http_check("http://localhost:8086/health", [200]),
+        ),
         ("notification", lambda: http_check("http://localhost:8087/health", [200])),
         ("natural-language", lambda: http_check("http://localhost:8088/health", [200])),
         ("reporting", lambda: http_check("http://localhost:8089/health", [200])),
@@ -255,4 +306,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

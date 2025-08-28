@@ -30,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Request logging middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -42,13 +43,16 @@ async def log_requests(request: Request, call_next):
     )
     return response
 
+
 # Include API routes
 app.include_router(api_router, prefix="/api/v1/logs")
+
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": settings.APP_NAME}
+
 
 # Prometheus metrics in text/plain for Prometheus scraping
 @app.get("/metrics", response_class=PlainTextResponse)
@@ -65,6 +69,7 @@ async def root():
         "docs_url": "/docs",
     }
 
+
 # Exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -73,6 +78,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "Internal server error"},
     )
+
 
 # 404 handler
 @app.exception_handler(404)

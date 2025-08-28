@@ -17,4 +17,3 @@ The script will:
 - validate token at `/api/v1/users/validate`
 - call health endpoints of core services via the API Gateway
 - call NLP explain endpoint
-

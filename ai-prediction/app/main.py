@@ -30,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Request logging middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -42,8 +43,10 @@ async def log_requests(request: Request, call_next):
     )
     return response
 
+
 # Include API routes
 app.include_router(api_router, prefix="/api/v1/predictions")
+
 
 # Health check endpoint
 @app.get("/health")
@@ -56,6 +59,7 @@ async def health_check():
 async def metrics():
     return "# HELP ai_prediction_up 1 if the service is up\n# TYPE ai_prediction_up gauge\nai_prediction_up 1\n"
 
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -65,6 +69,7 @@ async def root():
         "docs_url": "/docs",
     }
 
+
 # Exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -73,6 +78,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "Internal server error"},
     )
+
 
 # 404 handler
 @app.exception_handler(404)

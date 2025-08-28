@@ -195,4 +195,3 @@ Set env for tests:
 - NLP failures: set LLM_PROVIDER and API keys, or rely on DEBUG stubs
 - Log Analysis 5xx: wait for Elasticsearch/Kafka to be green
 - RabbitMQ UI 401/403: use credentials (aidevops / aidevops_password)
-

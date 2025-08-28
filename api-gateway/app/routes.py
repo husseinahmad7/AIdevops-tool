@@ -9,8 +9,11 @@ from .config import settings
 
 router = APIRouter()
 
+
 # Helper function to forward requests to microservices
-async def forward_request(request: Request, service_url: str, path: str, current_user: Optional[Dict] = None):
+async def forward_request(
+    request: Request, service_url: str, path: str, current_user: Optional[Dict] = None
+):
     # Get request body as bytes
     body = await request.body()
 
@@ -61,92 +64,170 @@ async def forward_request(request: Request, service_url: str, path: str, current
 # Uniform per-service health endpoints through the Gateway (no auth required)
 @router.get("/monitoring/health")
 async def monitoring_health(request: Request):
-    return await forward_request(request, settings.INFRASTRUCTURE_MONITOR_URL, "/health", None)
+    return await forward_request(
+        request, settings.INFRASTRUCTURE_MONITOR_URL, "/health", None
+    )
+
 
 @router.get("/predictions/health")
 async def predictions_health(request: Request):
     return await forward_request(request, settings.AI_PREDICTION_URL, "/health", None)
 
+
 @router.get("/logs/health")
 async def logs_health(request: Request):
     return await forward_request(request, settings.LOG_ANALYSIS_URL, "/health", None)
 
+
 @router.get("/cicd/health")
 async def cicd_health(request: Request):
-    return await forward_request(request, settings.CICD_OPTIMIZATION_URL, "/health", None)
+    return await forward_request(
+        request, settings.CICD_OPTIMIZATION_URL, "/health", None
+    )
+
 
 @router.get("/resources/health")
 async def resources_health(request: Request):
-    return await forward_request(request, settings.RESOURCE_OPTIMIZATION_URL, "/health", None)
+    return await forward_request(
+        request, settings.RESOURCE_OPTIMIZATION_URL, "/health", None
+    )
+
 
 @router.get("/nlp/health")
 async def nlp_health(request: Request):
-    return await forward_request(request, settings.NATURAL_LANGUAGE_URL, "/health", None)
+    return await forward_request(
+        request, settings.NATURAL_LANGUAGE_URL, "/health", None
+    )
+
 
 @router.get("/notifications/health")
 async def notifications_health(request: Request):
     return await forward_request(request, settings.NOTIFICATION_URL, "/health", None)
 
+
 @router.get("/reports/health")
 async def reports_health(request: Request):
     return await forward_request(request, settings.REPORTING_URL, "/health", None)
+
 
 @router.get("/users/health")
 async def users_health(request: Request):
     return await forward_request(request, settings.USER_MANAGEMENT_URL, "/health", None)
 
+
 # User Management Service routes
 @router.api_route("/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def auth_route(request: Request, path: str):
-    return await forward_request(request, settings.USER_MANAGEMENT_URL, f"/api/v1/auth/{path}", None)
+    return await forward_request(
+        request, settings.USER_MANAGEMENT_URL, f"/api/v1/auth/{path}", None
+    )
+
 
 @router.api_route("/users/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def users_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.USER_MANAGEMENT_URL, f"/api/v1/users/{path}", current_user)
+async def users_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request, settings.USER_MANAGEMENT_URL, f"/api/v1/users/{path}", current_user
+    )
+
 
 # Infrastructure Monitoring Service routes
 @router.api_route("/monitoring/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def monitoring_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.INFRASTRUCTURE_MONITOR_URL, f"/api/v1/monitoring/{path}", current_user)
+async def monitoring_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request,
+        settings.INFRASTRUCTURE_MONITOR_URL,
+        f"/api/v1/monitoring/{path}",
+        current_user,
+    )
+
 
 # AI Prediction Service routes
 @router.api_route("/predictions/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def predictions_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.AI_PREDICTION_URL, f"/api/v1/predictions/{path}", current_user)
+async def predictions_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request, settings.AI_PREDICTION_URL, f"/api/v1/predictions/{path}", current_user
+    )
+
 
 # Log Analysis Service routes
 @router.api_route("/logs/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def logs_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.LOG_ANALYSIS_URL, f"/api/v1/logs/{path}", current_user)
+async def logs_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request, settings.LOG_ANALYSIS_URL, f"/api/v1/logs/{path}", current_user
+    )
+
 
 # CI/CD Optimization Service routes
 @router.api_route("/cicd/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def cicd_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.CICD_OPTIMIZATION_URL, f"/api/v1/cicd/{path}", current_user)
+async def cicd_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request, settings.CICD_OPTIMIZATION_URL, f"/api/v1/cicd/{path}", current_user
+    )
+
 
 # Resource Optimization Service routes
 @router.api_route("/resources/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def resources_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.RESOURCE_OPTIMIZATION_URL, f"/api/v1/resources/{path}", current_user)
+async def resources_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request,
+        settings.RESOURCE_OPTIMIZATION_URL,
+        f"/api/v1/resources/{path}",
+        current_user,
+    )
+
 
 # Natural Language Interface Service routes
 @router.api_route("/nlp/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def nlp_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.NATURAL_LANGUAGE_URL, f"/api/v1/nlp/{path}", current_user)
+async def nlp_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request, settings.NATURAL_LANGUAGE_URL, f"/api/v1/nlp/{path}", current_user
+    )
+
 
 # Notification Service routes
-@router.api_route("/notifications/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def notifications_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.NOTIFICATION_URL, f"/api/v1/notifications/{path}", current_user)
+@router.api_route(
+    "/notifications/{path:path}", methods=["GET", "POST", "PUT", "DELETE"]
+)
+async def notifications_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request,
+        settings.NOTIFICATION_URL,
+        f"/api/v1/notifications/{path}",
+        current_user,
+    )
+
 
 # Reporting Service routes
 @router.api_route("/reports/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def reports_route(request: Request, path: str, current_user: Dict = Depends(get_current_user)):
-    return await forward_request(request, settings.REPORTING_URL, f"/api/v1/reports/{path}", current_user)
+async def reports_route(
+    request: Request, path: str, current_user: Dict = Depends(get_current_user)
+):
+    return await forward_request(
+        request, settings.REPORTING_URL, f"/api/v1/reports/{path}", current_user
+    )
+
 
 # Admin routes - requires admin role
 @router.api_route("/admin/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def admin_route(request: Request, path: str, admin_user: Dict = Depends(get_admin_user)):
+async def admin_route(
+    request: Request, path: str, admin_user: Dict = Depends(get_admin_user)
+):
     # Determine which service to forward to based on the path
     if path.startswith("users"):
         service_url = settings.USER_MANAGEMENT_URL

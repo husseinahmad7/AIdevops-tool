@@ -3,6 +3,9 @@ import docker
 import platform
 import socket
 import time
+
+# flake8: noqa: F401
+
 import logging
 import asyncio
 import json
@@ -39,7 +42,7 @@ if settings.K8S_ENABLED:
         if settings.K8S_CONFIG_PATH:
             config.load_kube_config(
                 config_file=settings.K8S_CONFIG_PATH,
-                context=settings.K8S_CONTEXT or None
+                context=settings.K8S_CONTEXT or None,
             )
         else:
             # Try in-cluster config for when running inside Kubernetes
@@ -47,6 +50,7 @@ if settings.K8S_ENABLED:
         k8s_client = client.CoreV1Api()
     except Exception as e:
         logger.warning(f"Kubernetes connection failed: {e}")
+
 
 # System metrics collection
 async def get_system_metrics() -> Dict[str, Any]:
@@ -60,7 +64,7 @@ async def get_system_metrics() -> Dict[str, Any]:
     # Collect metrics
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
-    disk = psutil.disk_usage('/')
+    disk = psutil.disk_usage("/")
     network = psutil.net_io_counters()
 
     metrics = {
@@ -70,20 +74,20 @@ async def get_system_metrics() -> Dict[str, Any]:
         "cpu": {
             "percent": cpu_percent,
             "cores": psutil.cpu_count(),
-            "alert": cpu_percent > settings.CPU_THRESHOLD
+            "alert": cpu_percent > settings.CPU_THRESHOLD,
         },
         "memory": {
             "total": memory.total,
             "available": memory.available,
             "percent": memory.percent,
-            "alert": memory.percent > settings.MEMORY_THRESHOLD
+            "alert": memory.percent > settings.MEMORY_THRESHOLD,
         },
         "disk": {
             "total": disk.total,
             "used": disk.used,
             "free": disk.free,
             "percent": disk.percent,
-            "alert": disk.percent > settings.DISK_THRESHOLD
+            "alert": disk.percent > settings.DISK_THRESHOLD,
         },
         "network": {
             "bytes_sent": network.bytes_sent,
@@ -91,8 +95,8 @@ async def get_system_metrics() -> Dict[str, Any]:
             "packets_sent": network.packets_sent,
             "packets_recv": network.packets_recv,
             "errin": network.errin,
-            "errout": network.errout
-        }
+            "errout": network.errout,
+        },
     }
 
     # Cache the result
@@ -102,16 +106,31 @@ async def get_system_metrics() -> Dict[str, Any]:
     # Send alerts if thresholds exceeded
     alerts = []
     if metrics["cpu"]["alert"]:
-        alerts.append({"type": "cpu", "value": cpu_percent, "threshold": settings.CPU_THRESHOLD})
+        alerts.append(
+            {"type": "cpu", "value": cpu_percent, "threshold": settings.CPU_THRESHOLD}
+        )
     if metrics["memory"]["alert"]:
-        alerts.append({"type": "memory", "value": memory.percent, "threshold": settings.MEMORY_THRESHOLD})
+        alerts.append(
+            {
+                "type": "memory",
+                "value": memory.percent,
+                "threshold": settings.MEMORY_THRESHOLD,
+            }
+        )
     if metrics["disk"]["alert"]:
-        alerts.append({"type": "disk", "value": disk.percent, "threshold": settings.DISK_THRESHOLD})
+        alerts.append(
+            {
+                "type": "disk",
+                "value": disk.percent,
+                "threshold": settings.DISK_THRESHOLD,
+            }
+        )
 
     if alerts:
         await send_alerts(alerts)
 
     return metrics
+
 
 # Docker container metrics
 async def get_docker_metrics() -> List[Dict[str, Any]]:
@@ -133,15 +152,19 @@ async def get_docker_metrics() -> List[Dict[str, Any]]:
             stats = container.stats(stream=False)
 
             # Calculate CPU usage percentage
-            cpu_delta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - \
-                       stats["precpu_stats"]["cpu_usage"]["total_usage"]
-            system_delta = stats["cpu_stats"]["system_cpu_usage"] - \
-                          stats["precpu_stats"]["system_cpu_usage"]
-            
+            cpu_delta = (
+                stats["cpu_stats"]["cpu_usage"]["total_usage"]
+                - stats["precpu_stats"]["cpu_usage"]["total_usage"]
+            )
+            system_delta = (
+                stats["cpu_stats"]["system_cpu_usage"]
+                - stats["precpu_stats"]["system_cpu_usage"]
+            )
+
             # Guard against missing percpu_usage
-            percpu = stats['cpu_stats']['cpu_usage'].get('percpu_usage') or []
+            percpu = stats["cpu_stats"]["cpu_usage"].get("percpu_usage") or []
             n_cpus = max(len(percpu), 1)
-            
+
             # Calculate CPU percentage
             if system_delta > 0 and cpu_delta > 0:
                 cpu_percent = (cpu_delta / system_delta) * n_cpus * 100.0
@@ -157,24 +180,32 @@ async def get_docker_metrics() -> List[Dict[str, Any]]:
                 "id": container.id,
                 "name": container.name,
                 "status": container.status,
-                "image": container.image.tags[0] if container.image.tags else container.image.id,
+                "image": (
+                    container.image.tags[0]
+                    if container.image.tags
+                    else container.image.id
+                ),
                 "cpu_percent": cpu_percent,
                 "memory_usage": memory_usage,
                 "memory_limit": memory_limit,
                 "memory_percent": memory_percent,
-                "alert": cpu_percent > settings.CPU_THRESHOLD or memory_percent > settings.MEMORY_THRESHOLD
+                "alert": cpu_percent > settings.CPU_THRESHOLD
+                or memory_percent > settings.MEMORY_THRESHOLD,
             }
 
             metrics.append(container_metrics)
 
         # Cache the result
         if redis_client:
-            redis_client.setex("docker_metrics", settings.CACHE_TTL, json.dumps(metrics))
+            redis_client.setex(
+                "docker_metrics", settings.CACHE_TTL, json.dumps(metrics)
+            )
 
         return metrics
     except Exception as e:
         logger.error(f"Error collecting Docker metrics: {e}")
         return []
+
 
 # Kubernetes metrics
 async def get_kubernetes_metrics() -> Dict[str, Any]:
@@ -202,7 +233,7 @@ async def get_kubernetes_metrics() -> Dict[str, Any]:
                 "os_image": node.status.node_info.os_image,
                 "allocatable_cpu": node.status.allocatable.get("cpu"),
                 "allocatable_memory": node.status.allocatable.get("memory"),
-                "allocatable_pods": node.status.allocatable.get("pods")
+                "allocatable_pods": node.status.allocatable.get("pods"),
             }
             node_metrics.append(node_info)
 
@@ -218,14 +249,30 @@ async def get_kubernetes_metrics() -> Dict[str, Any]:
                     "image": container.image,
                     "resources": {
                         "requests": {
-                            "cpu": container.resources.requests.get("cpu") if container.resources.requests else None,
-                            "memory": container.resources.requests.get("memory") if container.resources.requests else None
+                            "cpu": (
+                                container.resources.requests.get("cpu")
+                                if container.resources.requests
+                                else None
+                            ),
+                            "memory": (
+                                container.resources.requests.get("memory")
+                                if container.resources.requests
+                                else None
+                            ),
                         },
                         "limits": {
-                            "cpu": container.resources.limits.get("cpu") if container.resources.limits else None,
-                            "memory": container.resources.limits.get("memory") if container.resources.limits else None
-                        }
-                    }
+                            "cpu": (
+                                container.resources.limits.get("cpu")
+                                if container.resources.limits
+                                else None
+                            ),
+                            "memory": (
+                                container.resources.limits.get("memory")
+                                if container.resources.limits
+                                else None
+                            ),
+                        },
+                    },
                 }
                 containers.append(container_info)
 
@@ -235,8 +282,10 @@ async def get_kubernetes_metrics() -> Dict[str, Any]:
                 "status": pod.status.phase,
                 "host_ip": pod.status.host_ip,
                 "pod_ip": pod.status.pod_ip,
-                "start_time": pod.status.start_time.isoformat() if pod.status.start_time else None,
-                "containers": containers
+                "start_time": (
+                    pod.status.start_time.isoformat() if pod.status.start_time else None
+                ),
+                "containers": containers,
             }
             pod_metrics.append(pod_info)
 
@@ -251,7 +300,7 @@ async def get_kubernetes_metrics() -> Dict[str, Any]:
                     "name": port.name,
                     "port": port.port,
                     "target_port": port.target_port,
-                    "protocol": port.protocol
+                    "protocol": port.protocol,
                 }
                 ports.append(port_info)
 
@@ -260,7 +309,7 @@ async def get_kubernetes_metrics() -> Dict[str, Any]:
                 "namespace": service.metadata.namespace,
                 "cluster_ip": service.spec.cluster_ip,
                 "type": service.spec.type,
-                "ports": ports
+                "ports": ports,
             }
             service_metrics.append(service_info)
 
@@ -268,7 +317,7 @@ async def get_kubernetes_metrics() -> Dict[str, Any]:
             "timestamp": datetime.now().isoformat(),
             "nodes": node_metrics,
             "pods": pod_metrics,
-            "services": service_metrics
+            "services": service_metrics,
         }
 
         # Cache the result
@@ -280,6 +329,7 @@ async def get_kubernetes_metrics() -> Dict[str, Any]:
         logger.error(f"Error collecting Kubernetes metrics: {e}")
         return {}
 
+
 # Send alerts to RabbitMQ
 async def send_alerts(alerts: List[Dict[str, Any]]):
     """Send alerts to RabbitMQ"""
@@ -289,9 +339,7 @@ async def send_alerts(alerts: List[Dict[str, Any]]):
 
         # Ensure exchange exists
         channel.exchange_declare(
-            exchange=settings.ALERT_EXCHANGE,
-            exchange_type='topic',
-            durable=True
+            exchange=settings.ALERT_EXCHANGE, exchange_type="topic", durable=True
         )
 
         for alert in alerts:
@@ -301,7 +349,7 @@ async def send_alerts(alerts: List[Dict[str, Any]]):
                 "alert_type": alert["type"],
                 "value": alert["value"],
                 "threshold": alert["threshold"],
-                "message": f"{alert['type'].upper()} usage is {alert['value']:.2f}%, exceeding threshold of {alert['threshold']}%"
+                "message": f"{alert['type'].upper()} usage is {alert['value']:.2f}%, exceeding threshold of {alert['threshold']}%",
             }
 
             routing_key = f"infrastructure.alert.{alert['type']}"
@@ -311,8 +359,8 @@ async def send_alerts(alerts: List[Dict[str, Any]]):
                 body=json.dumps(message),
                 properties=pika.BasicProperties(
                     delivery_mode=2,  # make message persistent
-                    content_type='application/json'
-                )
+                    content_type="application/json",
+                ),
             )
 
             logger.warning(f"Alert sent: {message['message']}")
@@ -320,6 +368,7 @@ async def send_alerts(alerts: List[Dict[str, Any]]):
         connection.close()
     except Exception as e:
         logger.error(f"Failed to send alerts: {e}")
+
 
 # Background monitoring task
 async def monitoring_task():

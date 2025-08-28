@@ -9,6 +9,7 @@ ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "admin123"
 ADMIN_ROLE = "admin"
 
+
 def seed_admin() -> None:
     db: Session = SessionLocal()
     try:
@@ -17,7 +18,10 @@ def seed_admin() -> None:
         # check if admin exists by username or email
         user = (
             db.query(models.User)
-            .filter((models.User.username == ADMIN_USERNAME) | (models.User.email == ADMIN_EMAIL))
+            .filter(
+                (models.User.username == ADMIN_USERNAME)
+                | (models.User.email == ADMIN_EMAIL)
+            )
             .first()
         )
         if user:
@@ -45,6 +49,6 @@ def seed_admin() -> None:
     finally:
         db.close()
 
+
 if __name__ == "__main__":
     seed_admin()
-

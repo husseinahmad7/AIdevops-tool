@@ -13,7 +13,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
 
@@ -29,15 +29,18 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
 
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "api-gateway"}
 
+
 # Root endpoint
 @app.get("/")
 async def root():
     return {"message": "Welcome to AI DevOps Assistant API Gateway"}
+
 
 # Prometheus-style scrape endpoint (stub) to avoid 404s
 @app.get("/metrics", response_class=PlainTextResponse)
@@ -53,11 +56,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={"detail": exc.detail},
     )
 
+
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=500,
-        content={"detail":exc.detail})
+    return JSONResponse(status_code=500, content={"detail": exc.detail})
 
 
 # Simple Admin Test UI
@@ -350,4 +352,5 @@ async def admin_ui():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)

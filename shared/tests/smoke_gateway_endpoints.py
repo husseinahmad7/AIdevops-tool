@@ -12,4 +12,3 @@ def test_gateway_health():
 def test_docs_available():
     r = requests.get(f"{BASE}/docs", timeout=10)
     assert r.status_code in (200, 307, 308)
-

@@ -36,4 +36,3 @@ spec:
       targetPort: 8081
       protocol: TCP
       name: http
-

@@ -150,4 +150,3 @@ Environment:
 - If /api/v1 calls 401: ensure you include Authorization: Bearer <token>.
 - If NLP calls fail: set LLM_PROVIDER and relevant API keys; or use Ollama with a CPU model.
 - If log-analysis returns 503: ensure Elasticsearch, Zookeeper, Kafka are up and ready.
-

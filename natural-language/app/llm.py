@@ -5,6 +5,7 @@ from .config import settings
 
 # Provider callables return a string completion given a prompt and optional system instruction
 
+
 def _ollama_caller() -> Callable[[str, str], str]:
     base = settings.OLLAMA_BASE_URL.rstrip("/")
     model = settings.LLM_MODEL
@@ -35,7 +36,9 @@ def _openrouter_caller() -> Callable[[str, str], str]:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
         payload = {"model": model, "messages": messages}
-        resp = requests.post(f"{base}/chat/completions", headers=headers, json=payload, timeout=120)
+        resp = requests.post(
+            f"{base}/chat/completions", headers=headers, json=payload, timeout=120
+        )
         resp.raise_for_status()
         data = resp.json()
         return data.get("choices", [{}])[0].get("message", {}).get("content", "")
@@ -48,7 +51,10 @@ def _huggingface_caller() -> Callable[[str, str], str]:
     headers = {"Authorization": f"Bearer {settings.HUGGINGFACE_API_KEY}"}
 
     def _call(prompt: str, system: str = "") -> str:
-        payload = {"inputs": f"{system}\n\n{prompt}", "parameters": {"temperature": 0.7}}
+        payload = {
+            "inputs": f"{system}\n\n{prompt}",
+            "parameters": {"temperature": 0.7},
+        }
         resp = requests.post(api_url, headers=headers, json=payload, timeout=120)
         resp.raise_for_status()
         data = resp.json()
@@ -82,7 +88,6 @@ def _should_stub() -> bool:
     return settings.DEBUG
 
 
-
 # Process natural language query
 async def process_query(query: str, context: str | None = None) -> str:
     system_prompt = (
@@ -92,8 +97,12 @@ async def process_query(query: str, context: str | None = None) -> str:
         "If you're unsure, say so rather than making up information."
     )
 
-    user_prompt = query if not context else (
-        f"Based on the following context:\n\n{context}\n\nAnswer the following question: {query}"
+    user_prompt = (
+        query
+        if not context
+        else (
+            f"Based on the following context:\n\n{context}\n\nAnswer the following question: {query}"
+        )
     )
 
     try:

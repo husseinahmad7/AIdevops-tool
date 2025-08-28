@@ -112,7 +112,7 @@ Build a scalable AI DevOps Assistant using microservices architecture that autom
 ### Technology Stack
 ```yaml
 Backend Framework: FastAPI/Spring Boot/Express.js
-Databases: 
+Databases:
   - PostgreSQL (relational data)
   - MongoDB (document storage)
   - InfluxDB (time-series metrics)

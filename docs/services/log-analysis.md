@@ -17,4 +17,3 @@ Search and analytics on logs backed by Elasticsearch and Kafka.
 ## Troubleshooting
 - Startup may be slow while Elasticsearch cluster turns green.
 - 5xx early on is expected; retry once ES/Kafka ready.
-

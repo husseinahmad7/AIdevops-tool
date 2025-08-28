@@ -37,4 +37,3 @@ spec:
       targetPort: 8088
       protocol: TCP
       name: http
-

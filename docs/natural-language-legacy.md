@@ -140,4 +140,3 @@ This document preserves the previous heavy (LangChain + local embeddings) implem
 #     vector_db.add_documents(texts)
 #     return {"status": "success", "chunk_count": len(texts)}
 ```
-

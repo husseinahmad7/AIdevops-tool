@@ -1,9 +1,18 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, UUID
+from sqlalchemy import (
+    Boolean,
+    Column,
+    ForeignKey,
+    String,
+    DateTime,
+    JSON,
+    UUID,
+)
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
 
 from .database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -19,6 +28,7 @@ class User(Base):
 
     # Relationships
     api_keys = relationship("APIKey", back_populates="user")
+
 
 class APIKey(Base):
     __tablename__ = "api_keys"
