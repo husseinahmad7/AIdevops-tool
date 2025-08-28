@@ -26,4 +26,3 @@ pytest:
         python -m pytest -q || echo "No tests, skipping"
         cd -
       done
-
